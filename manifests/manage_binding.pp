@@ -19,8 +19,14 @@ define iis::manage_binding($site_name, $protocol, $port, $host_header = '', $ip_
       default => Iis_site[$site_name],
     }
 
+    if $::kernelmajversion >= 6.2 {
+      $ssl_flag_param = "-SslFlags \"${ssl_flag}\""
+    } else {
+      $ssl_flag_param = ''
+    }
+
     exec { "CreateBinding-${title}":
-      command   => "Import-Module WebAdministration; New-WebBinding -Name \"${site_name}\" -Port ${port} -Protocol \"${protocol}\" -HostHeader \"${host_header}\" -IPAddress \"${ip_address}\" -SslFlags \"${ssl_flag}\"",
+      command   => "Import-Module WebAdministration; New-WebBinding -Name \"${site_name}\" -Port ${port} -Protocol \"${protocol}\" -HostHeader \"${host_header}\" -IPAddress \"${ip_address}\" ${ssl_flag_param}",
       onlyif    => "Import-Module WebAdministration; if (Get-WebBinding -Name \"${site_name}\" -Port ${port} -Protocol \"${protocol}\" -HostHeader \"${host_header}\" -IPAddress \"${ip_address}\" | Where-Object {\$_.bindingInformation -eq \"${ip_address}:${port}:${host_header}\"}) { exit 1 } else { exit 0 }",
       provider  => powershell,
       logoutput => true,

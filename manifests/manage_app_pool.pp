@@ -19,7 +19,7 @@ define iis::manage_app_pool (
 ) {
 
   validate_bool($enable_32_bit)
-  validate_re($managed_runtime_version, ['^(v2\.0|v4\.0|v4\.5)$'])
+  validate_re($managed_runtime_version, ['^(v2\.0|v4\.0|v4\.5|no_managed_code)$'])
   validate_re($managed_pipeline_mode, ['^(Integrated|Classic)$'])
   validate_re($ensure, '^(present|installed|absent|purged)$', 'ensure must be one of \'present\', \'installed\', \'absent\', \'purged\'')
   validate_re($start_mode, '^(OnDemand|AlwaysRunning)$')
@@ -177,10 +177,16 @@ define iis::manage_app_pool (
       logoutput => true,
     }
 
+    if $managed_runtime_version == 'no_managed_code' {
+      $actual_managed_runtime_version = ''
+    } else {
+      $actual_managed_runtime_version = $managed_runtime_version
+    }
+
     exec { "Framework-${app_pool_name}":
-      command   => "Import-Module WebAdministration; Set-ItemProperty \"IIS:\\AppPools\\${app_pool_name}\" managedRuntimeVersion ${managed_runtime_version}",
+      command   => "Import-Module WebAdministration; Set-ItemProperty \"IIS:\\AppPools\\${app_pool_name}\" managedRuntimeVersion '${actual_managed_runtime_version}'",
       provider  => powershell,
-      onlyif    => "Import-Module WebAdministration; if((Get-ItemProperty \"IIS:\\AppPools\\${app_pool_name}\" managedRuntimeVersion).Value.CompareTo('${managed_runtime_version}') -eq 0) { exit 1 } else { exit 0 }",
+      onlyif    => "Import-Module WebAdministration; if((Get-ItemProperty \"IIS:\\AppPools\\${app_pool_name}\" managedRuntimeVersion).Value.CompareTo('${actual_managed_runtime_version}') -eq 0) { exit 1 } else { exit 0 }",
       require   => Exec["Create-${app_pool_name}"],
       logoutput => true,
     }
