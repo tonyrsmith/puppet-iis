@@ -38,7 +38,7 @@ ps1
       site_hash[:ip]          = bindings.split(':')[0]
       site_hash[:port]        = bindings.split(':')[1]
       site_hash[:host_header] = bindings.split(':')[2]
-      site_hash[:ssl] = if site['bindings']['Collection'].first['sslFlags'].zero?
+      site_hash[:ssl] = if site['bindings']['Collection'].first['sslFlags'].nil?
                           :false
                         else
                           :true
